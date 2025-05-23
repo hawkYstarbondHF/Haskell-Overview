@@ -1,0 +1,32 @@
+name: Autograding Tests
+'on':
+- workflow_dispatch
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Test All
+      id: test-all
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Test All
+        setup-command: curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org
+          | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 sudo sh ; source /home/codespace/.ghcup/env
+          ; cabal update ; cabal install --lib HUnit ; cabal install --lib silently
+        command: runghc HaskellOverviewTest.hs
+        timeout: 10
+        max-score: 50
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        TEST-ALL_RESULTS: "${{steps.test-all.outputs.result}}"
+      with:
+        runners: test-all
